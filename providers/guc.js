@@ -4,8 +4,6 @@ const crypto = require('crypto')
 const axios = require('axios');
 
 function signMessage(dateStr, params) {
-  //TODO: secret token
-  const token = "token"
   let str = ""
   keys = Object.keys(params)
   keys.sort()
@@ -14,7 +12,7 @@ function signMessage(dateStr, params) {
   }
   str += dateStr
 
-  return crypto.createHmac('sha1', token)
+  return crypto.createHmac('sha1', process.env.GUC_TOKEN)
     .update(str)
     .digest('hex')
 }
@@ -26,8 +24,6 @@ function getContent(dateStr, messageParams) {
 class GucProvider extends Provider {
 
   static upload(file, dir) {
-    process.env.NODE_TLS_REJECT_UNAUTHORIZED = '0';
-    
     let headers = {
       "X-Blithe-Context" : "{}",
       "Content-Type" : "text/x-json; charset=utf-8",
@@ -35,7 +31,7 @@ class GucProvider extends Provider {
       "Accept" : "text/x-json"
     }
     const now = new Date()
-    let content = getContent(now.toISOString(),{application: "dev-formio"})
+    let content = getContent(now.toISOString(),{application: process.env.GUC_APPLICATION})
     
     axios.post('https://test.gsgusercontent.com/api/request_upload', content, { headers: headers}).then((response) => {
       console.log(response.data.return)
@@ -54,8 +50,6 @@ class GucProvider extends Provider {
   }
 
   static download(fileId, req, res) {
-    process.env.NODE_TLS_REJECT_UNAUTHORIZED = '0';
-    
     headers = {
       "X-Blithe-Context" : "{}",
       "Content-Type" : "text/x-json; charset=utf-8",
@@ -63,7 +57,7 @@ class GucProvider extends Provider {
       "Accept" : "text/x-json"
     }
     const now = new Date()
-    content = getContent(now.toISOString(), {application: "dev-formio", file_uuid: fileId})
+    content = getContent(now.toISOString(), {application: process.env.GUC_APPLICATION, file_uuid: fileId})
     axios.post('https://test.gsgusercontent.com/api/request_download', content, { headers: headers}).then((response) => {
       axios.post(response.data.return.download_uri).then((r) => {
         res.send(r.data) //not sure about this
