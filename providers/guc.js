@@ -24,11 +24,6 @@ function getContent(dateStr, messageParams) {
 }
 
 class GucProvider extends Provider {
-  static auth(req, res, next) {
-    req.debug('Authenticating');
-    //I don't think anythin needs to be done here. COuld leave this func out.
-    next();
-  }
 
   static upload(file, dir) {
     process.env.NODE_TLS_REJECT_UNAUTHORIZED = '0';
@@ -39,17 +34,20 @@ class GucProvider extends Provider {
       "X-Blithe-Version" : "2.0",
       "Accept" : "text/x-json"
     }
-    let content = getContent("03/05/20 10:27AM",{application: "dev-formio"})
+    const now = new Date()
+    let content = getContent(now.toISOString(),{application: "dev-formio"})
     
     axios.post('https://test.gsgusercontent.com/api/request_upload', content, { headers: headers}).then((response) => {
+      console.log(response.data.return)
       //make actual upload request
-      console.log(response.data)
-      axios.post(response.data.return.upload_uri, {name: "filename", file: file}).then((r) => {
+      let formData = new FormData();
+      formData.append('filename', file, {'filename': 'filename'})
+      
+      axios.post(response.data.return.upload_uri, formData, {headers: formData.getHeaders()} ).then((r) => {
         console.log(r.data)
         next()
       }).catch((error) => {
         console.log(error.response.data)
-        //No upload found in request.
         next(error.response.data)
       })
     })
@@ -64,13 +62,12 @@ class GucProvider extends Provider {
       "X-Blithe-Version" : "2.0",
       "Accept" : "text/x-json"
     }
-    content = getContent("03/05/20 10:27AM", {application: "dev-formio", file_uuid: fileId})
+    const now = new Date()
+    content = getContent(now.toISOString(), {application: "dev-formio", file_uuid: fileId})
     axios.post('https://test.gsgusercontent.com/api/request_download', content, { headers: headers}).then((response) => {
-      console.log(response.data)
-      console.log(response.data.return.download_uri)
       axios.post(response.data.return.download_uri).then((r) => {
+        res.send(r.data) //not sure about this
         console.log(r.data)
-        res.send(r.data)
         next()
       }).catch((error) => {
         console.log(error.response.data)

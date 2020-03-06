@@ -21,6 +21,7 @@
     "debug": "^4.1.0",
     "dotenv": "^6.1.0",
     "express": "^4.16.4",
+    "form-data": "^3.0.0",
     "formiojs": "^3.6.13",
     "fs-extra": "^7.0.0",
     "lodash": "^4.17.11",
