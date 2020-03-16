@@ -14,6 +14,9 @@ module.exports = function uploadFile(req, res, next) {
       return next('File not uploaded');
     }
 
+
+
+    
     // Add the uploaded file to cleanup task.
     req.debug(`Uploaded file ${req.file.path}`);
     req.cleanup.push(req.file.path);
