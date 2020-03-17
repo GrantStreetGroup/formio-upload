@@ -48,9 +48,7 @@ class GucProvider extends Provider {
         reject(error)
       })
     })
-
     return promise
-    
   }
 
   static download(fileId, req, res) {
@@ -68,9 +66,12 @@ class GucProvider extends Provider {
         console.log(r.data)
         next()
       }).catch((error) => {
-        console.log(error.response.data)
-        next(error.response.data)
+        console.log(error)
+        next(error)
       })
+    }).catch((error) => {
+      console.log(error)
+      next(error)
     })
   }
 }
