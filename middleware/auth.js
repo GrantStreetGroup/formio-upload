@@ -3,7 +3,7 @@ module.exports = function authenticate(req, res, next) {
   req.debug('Authenticating');
   // Require an auth token to get the file.
   if (req.method === 'GET' && !req.query.token) {
-    return res.status(401).send('Unauthorized');
+    return res.status(401).send('1Unauthorized');
   }
 
   if (req.query.token) {
@@ -16,7 +16,7 @@ module.exports = function authenticate(req, res, next) {
         return next(err);
       }
       if (!body._id) {
-        return res.status(401).send('Unauthorized');
+        return res.status(401).send('2Unauthorized');
       }
 
       // We are able to load the submission, so we are authenticated to download this file.
@@ -42,15 +42,15 @@ module.exports = function authenticate(req, res, next) {
       }
 
       if (response.statusCode !== 200) {
+        //NOTE: returns 400 if missing required fields. I could alter this to return 200 given that specific error.
         return res.sendStatus(response.statusCode);
       }
-
       // If we could submit the form, then we are allowed to upload the file.
       return next();
     });
   }
   else {
     // Everything else is unauthorized.
-    return res.status(401).send('Unauthorized');
+    return res.status(401).send('3Unauthorized');
   }
 };

@@ -25,6 +25,7 @@ function getContent(dateStr, messageParams) {
 class GucProvider extends Provider {
 
   static upload(file, dir) {
+    console.log('file!!! ', file)
     let headers = {
       "X-Blithe-Context" : "{}",
       "Content-Type" : "text/x-json; charset=utf-8",
@@ -38,7 +39,9 @@ class GucProvider extends Provider {
       axios.post('https://test.gsgusercontent.com/api/request_upload', content, { headers: headers}).then((response) => {
         //make actual upload request
         let formData = new FormData();
-        formData.append('filename', fs.createReadStream(file.path), {'filename': 'filename'})
+        console.log('file: ', file)
+        //originalname: '_untitledimage (1).png',
+        formData.append('filename', fs.createReadStream(file.path), {'filename': file.originalname, 'contentType': file.mimetype}) //used to be {'filename': 'filename'}. file.originalname? file.filename?
         axios.post(response.data.return.upload_uri, formData, {headers: formData.getHeaders()} ).then((r) => {
           resolve({url: `/${response.data.return.file_uuid}`})
         }).catch((error) => {
@@ -52,26 +55,36 @@ class GucProvider extends Provider {
   }
 
   static download(fileId, req, res) {
-    headers = {
+    let headers = {
       "X-Blithe-Context" : "{}",
       "Content-Type" : "text/x-json; charset=utf-8",
       "X-Blithe-Version" : "2.0",
       "Accept" : "text/x-json"
     }
+    console.log('eschwab downloading')
     const now = new Date()
-    content = getContent(now.toISOString(), {application: process.env.GUC_APPLICATION, file_uuid: fileId})
+    let content = getContent(now.toISOString(), {application: process.env.GUC_APPLICATION, file_uuid: fileId})
     axios.post('https://test.gsgusercontent.com/api/request_download', content, { headers: headers}).then((response) => {
-      axios.post(response.data.return.download_uri).then((r) => {
+      //const file = fs.createWriteStream("/tmp/file.jpg", encoding:)
+      //console.log('download file: ', file)
+      axios.get(response.data.return.download_uri, {responseType:'arraybuffer'}).then((r) => {
+        //console.log('r: ', r)
+        /*file.write(r.data)
+        file.close()
+        let stats = fs.statSync("/tmp/file.jpg")
+        let fileSizeInBytes = stats.size*/
+        res.set('Content-Type', r.headers['content-type']);
+        res.set('Content-Disposition', r.headers['content-disposition']);
         res.send(r.data) //not sure about this
-        console.log(r.data)
-        next()
+        //fs.createReadStream("/tmp/file.jpg").pipe(res);
+        
       }).catch((error) => {
         console.log(error)
-        next(error)
+        res.status(500).send(error)
       })
     }).catch((error) => {
       console.log(error)
-      next(error)
+      res.status(500).send(error)
     })
   }
 }
