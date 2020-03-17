@@ -40,7 +40,7 @@ class GucProvider extends Provider {
         let formData = new FormData();
         formData.append('filename', fs.createReadStream(file.path), {'filename': 'filename'})
         axios.post(response.data.return.upload_uri, formData, {headers: formData.getHeaders()} ).then((r) => {
-          resolve({url: response.data.return.file_uuid})
+          resolve({url: `/${response.data.return.file_uuid}`})
         }).catch((error) => {
           reject(error)
         })
