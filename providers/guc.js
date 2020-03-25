@@ -23,9 +23,8 @@ function getContent(dateStr, messageParams) {
 }
 
 class GucProvider extends Provider {
-
+  
   static upload(file, dir) {
-    console.log('file!!! ', file)
     let headers = {
       "X-Blithe-Context" : "{}",
       "Content-Type" : "text/x-json; charset=utf-8",
@@ -36,7 +35,7 @@ class GucProvider extends Provider {
     const now = new Date()
     let content = getContent(now.toISOString(),{application: process.env.GUC_APPLICATION})
     let promise = new Promise(function(resolve, reject) {
-      axios.post('https://test.gsgusercontent.com/api/request_upload', content, { headers: headers}).then((response) => {
+      axios.post(process.env.GUC_URL + '/api/request_upload', content, { headers: headers}).then((response) => {
         //make actual upload request
         let formData = new FormData();
         formData.append('filename', fs.createReadStream(file.path), {'filename': file.originalname, 'contentType': file.mimetype})
@@ -59,10 +58,10 @@ class GucProvider extends Provider {
       "X-Blithe-Version" : "2.0",
       "Accept" : "text/x-json"
     }
-    console.log('eschwab downloading')
+    
     const now = new Date()
     let content = getContent(now.toISOString(), {application: process.env.GUC_APPLICATION, file_uuid: fileId})
-    axios.post('https://test.gsgusercontent.com/api/request_download', content, { headers: headers}).then((response) => {
+    axios.post(process.env.GUC_URL + '/api/request_download', content, { headers: headers}).then((response) => {
       axios.get(response.data.return.download_uri, {responseType:'arraybuffer'}).then((r) => {
         res.set('Content-Type', r.headers['content-type']);
         res.set('Content-Disposition', r.headers['content-disposition']);
