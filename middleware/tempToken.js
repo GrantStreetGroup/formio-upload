@@ -42,7 +42,6 @@ module.exports = function tempToken(req, res, next) {
       if (!body || !body.key) {
         return res.status(401).send('Unauthorized');
       }
-      console.log('body', body)
       req.body.url += `token=${body.key}`;
       next();
     });

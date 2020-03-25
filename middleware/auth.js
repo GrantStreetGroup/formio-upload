@@ -3,7 +3,7 @@ module.exports = function authenticate(req, res, next) {
   req.debug('Authenticating');
   // Require an auth token to get the file.
   if (req.method === 'GET' && !req.query.token) {
-    return res.status(401).send('1Unauthorized');
+    return res.status(401).send('Unauthorized');
   }
 
   if (req.query.token) {
@@ -16,7 +16,7 @@ module.exports = function authenticate(req, res, next) {
         return next(err);
       }
       if (!body._id) {
-        return res.status(401).send('2Unauthorized');
+        return res.status(401).send('Unauthorized');
       }
 
       // We are able to load the submission, so we are authenticated to download this file.
@@ -51,6 +51,6 @@ module.exports = function authenticate(req, res, next) {
   }
   else {
     // Everything else is unauthorized.
-    return res.status(401).send('3Unauthorized');
+    return res.status(401).send('Unauthorized');
   }
 };
