@@ -4,6 +4,7 @@ const upload = multer({
   dest: os.tmpdir()
 });
 module.exports = function uploadFile(req, res, next) {
+  console.log('upload begins!!!')
   req.debug(`Uploading file`);
   upload.single('file')(req, res, (err) => {
     if (err) {
@@ -20,6 +21,7 @@ module.exports = function uploadFile(req, res, next) {
     req.provider.upload(req.file, req.body.dir).then(entity => {
       req.response = entity;
       req.debug(`Uploaded file ${entity.url}`);
+      console.log('upload running to a close!!!')
       return next();
     }, err => next(err));
   });
