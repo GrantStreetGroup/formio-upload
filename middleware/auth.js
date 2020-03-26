@@ -1,7 +1,8 @@
 const request = require('request');
+
 module.exports = function authenticate(req, res, next) {
   req.debug('Authenticating');
-  console.log('auth begins!!!')
+  
   // Require an auth token to get the file.
   if (req.method === 'GET' && !req.query.token) {
     return res.status(401).send('Unauthorized');
@@ -28,62 +29,106 @@ module.exports = function authenticate(req, res, next) {
     if (!req.query.form || !req.query.baseUrl) {
       return next('Form not found.');
     }
-  
-    //get this user's assigned roles
+
+    // Get this user's assigned roles
     request.get({
       url: `${req.query.baseUrl}/current`,
       headers: {
         'x-jwt-token': req.headers['x-jwt-token']
       }
-    }, (err, response) => {
+    }, (err, userResponse) => {
       if (err) {
         return next(err);
       }
 
-      if (response.statusCode !== 200) {
-        //NOTE: returns 400 if missing required fields. I could alter this to return 200 given that specific error.
-        return res.sendStatus(response.statusCode);
+      if (userResponse.statusCode !== 200) {
+        return res.sendStatus(userResponse.statusCode);
       }
 
-      let body = JSON.parse(response.body)
-      
-      //If this is a superuser, return authenticated.
-      if (body.project === process.env.PORTAL_BASE_PROJECT_ID) {
-        return next()
+      let userBody = JSON.parse(userResponse.body)
+
+      let userTeams = userBody.teams
+      let userRoleIds = userBody.roles
+
+      // If this is a superuser, return authenticated.
+      if (userBody.project === process.env.PORTAL_BASE_PROJECT_ID) {
+        //find the user's teams
+        request.get({
+          url: `${req.query.baseUrl}`,
+          headers: {
+            'x-jwt-token': req.headers['x-jwt-token']
+          }
+        }, (err, projectResponse) => {
+          if (err) {
+            return next(err);
+          }
+  
+          if (projectResponse.statusCode !== 200) {
+            return res.sendStatus(projectResponse.statusCode);
+          }
+  
+          let projectBody = JSON.parse(projectResponse.body)
+
+          let teamAccess = projectBody.access.filter(access => access.type === 'team_access' )
+          let teams = teamAccess[0].roles
+          console.log('!!teams', Array.isArray(teams), teams, teams[0], typeof teams[0] )
+          console.log('!!userteams', Array.isArray(userTeams), userTeams, userTeams[0], typeof userTeams[0] )
+
+          for (let team of userTeams) {
+            if (teams.includes(team)) {
+              console.log('SUCCESS')
+              return next()
+            }
+          }
+          
+          // Find intersection of userTeams and teams. 
+          // this intersect operation is broken... not finding common value
+          //let intersect = userTeams.filter(value => teams.includes(value))
+  
+          // If there are any overlapping roles, user can be authenticated
+          /*if(intersect.length > 0) {
+            return next()
+          }*/
+          //This means if it fails on teams, it does not check roles
+          return res.status(401).send('Unauthorized');
+
+
+
+        });
       }
+      else {
+        // Get roles with create access to the form
+        request.get({
+          url: `${req.query.baseUrl}/form/${req.query.form}`,
+          headers: {
+            'x-jwt-token': req.headers['x-jwt-token']
+          }
+        }, (err, formResponse) => {
+          if (err) {
+            return next(err);
+          }
 
-      let userRoleIds = body.roles
-      
-      request.get({
-        url: `${req.query.baseUrl}/form/${req.query.form}`,
-        headers: {
-          'x-jwt-token': req.headers['x-jwt-token']
-        }
-      }, (err, response2) => {
-        if (err) {
-          return next(err);
-        }
+          if (formResponse.statusCode !== 200) {
+            return res.sendStatus(formResponse.statusCode);
+          }
 
-        if (response2.statusCode !== 200) {
-          return res.sendStatus(response2.statusCode);
-        }
+          let formBody = JSON.parse(formResponse.body)
+          let writeAccess = formBody.submissionAccess.filter(access => access.type === 'create_own' || access.type === 'create_all')
+          let writeAccessRoles = []
+          for (let access of writeAccess) {
+            writeAccessRoles.push(...access.roles)
+          }
+          
+          // Find intersection of writeAccessRoles and userRoleIds
+          let intersect = userRoleIds.filter(value => writeAccessRoles.includes(value))
 
-        console.log('auth running to a close!!!')
-
-        let body2 = JSON.parse(response2.body)
-        let writeAccess = body2.submissionAccess.filter(access => access.type === 'create_own' || access.type === 'create_all')
-        let writeAccessRoles = []
-        for (let access of writeAccess) {
-          writeAccessRoles.push(...access.roles)
-        }
-        
-        //find intersection of writeAccessRoles and userRoleIds
-        let intersect = userRoleIds.filter(value => writeAccessRoles.includes(value))
-        if(intersect.length > 0) {
-          return next()
-        }
-        return res.status(401).send('Unauthorized');
-      });
+          // If there are any overlapping roles, user can be authenticated
+          if(intersect.length > 0) {
+            return next()
+          }
+          return res.status(401).send('Unauthorized');
+        });
+      }
     });
 
     //1 issue: if form has no granted roles, it still should be able to be accessed by the superuser. Not sure how to tell
