@@ -62,14 +62,24 @@ class GucProvider extends Provider {
     const now = new Date()
     let content = getContent(now.toISOString(), {application: process.env.GUC_APPLICATION, file_uuid: fileId})
     axios.post(process.env.GUC_URL + '/api/request_download', content, { headers: headers}).then((response) => {
-      axios.get(response.data.return.download_uri, {responseType:'arraybuffer'}).then((r) => {
-        res.set('Content-Type', r.headers['content-type']);
-        res.set('Content-Disposition', r.headers['content-disposition']);
-        res.send(r.data) 
-      }).catch((error) => {
-        res.status(500).send(error)
-      })
+      console.log(response.data)
+      if (response.data.return === null) {
+        for (let error of response.data.message_stack) {
+          res.send(error.text)
+        }
+      }
+      else { 
+        axios.get(response.data.return.download_uri, {responseType:'arraybuffer'}).then((r) => {
+          res.set('Content-Type', r.headers['content-type']);
+          res.set('Content-Disposition', r.headers['content-disposition']);
+          res.send(r.data) 
+        }).catch((error) => {
+          console.log('!!error',error)
+          res.status(500).send(error)
+        })
+      }
     }).catch((error) => {
+      console.log('!!error',error)
       res.status(500).send(error)
     })
   }
