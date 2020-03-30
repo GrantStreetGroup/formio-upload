@@ -67,7 +67,7 @@ module.exports = function authenticate(req, res, next) {
           }
   
           let projectBody = JSON.parse(projectResponse.body)
-          let teamAccess = projectBody.access.filter(access => access.type === 'team_access' )
+          let teamAccess = projectBody.access.filter(access => access.type === 'team_access' || access.type === 'team_admin' )
           let teams = teamAccess[0].roles
           
           // Find intersection of userTeams and teams. 
