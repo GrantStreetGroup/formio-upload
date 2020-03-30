@@ -49,9 +49,9 @@ module.exports = function authenticate(req, res, next) {
       let userTeams = userBody.teams
       let userRoleIds = userBody.roles
 
-      // If this is a superuser, return authenticated.
+      // If this is a superuser, check team permissions.
       if (userBody.project === process.env.PORTAL_BASE_PROJECT_ID) {
-        //find the user's teams
+        // Find the user's teams
         request.get({
           url: `${req.query.baseUrl}`,
           headers: {
@@ -73,11 +73,11 @@ module.exports = function authenticate(req, res, next) {
           // Find intersection of userTeams and teams. 
           let intersect = userTeams.filter(value => teams.includes(value))
   
-          // If there are any overlapping roles, user can be authenticated
+          // If there are any overlapping teams, user can be authenticated
           if(intersect.length > 0) {
             return next()
           }
-          //This means if it fails on teams, it does not check roles
+          // If it fails on teams, it does not check roles
           return res.status(401).send('Unauthorized');
         });
       }
