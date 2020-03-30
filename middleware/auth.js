@@ -71,6 +71,7 @@ module.exports = function authenticate(req, res, next) {
           let teams = teamAccess[0].roles
           
           // Find intersection of userTeams and teams. 
+          // i.e., see what teams are listed both in the project access and in the user permissions
           let intersect = userTeams.filter(value => teams.includes(value))
   
           // If there are any overlapping teams, user can be authenticated
@@ -104,7 +105,8 @@ module.exports = function authenticate(req, res, next) {
             writeAccessRoles.push(...access.roles)
           }
           
-          // Find intersection of writeAccessRoles and userRoleIds
+          // Find intersection of writeAccessRoles and userRoleIds 
+          // i.e., see what roles are listed both in the form create access and in the user permissions
           let intersect = userRoleIds.filter(value => writeAccessRoles.includes(value))
 
           // If there are any overlapping roles, user can be authenticated
