@@ -9,6 +9,9 @@ module.exports = function authenticate(req, res, next) {
   }
 
   if (req.query.token) {
+    if (!req.query.submission) {
+      return res.status(400).send('Submission does not exist. Submit this form before downloading the uploaded file.');
+    }
     request.get({
       url: `${req.query.baseUrl}/form/${req.query.form}/submission/${req.query.submission}`,
       json: true,
